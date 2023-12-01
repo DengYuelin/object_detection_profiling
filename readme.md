@@ -186,6 +186,7 @@ sudo chrt -r $N ./yolo_detection # N is priority ranging from 1 to 99 where 99 i
 > 1. Implement code to measure the **total** execution time of each frame and store as a file. Plot the execution time in both statistically (histogram), temporally (frame_num v.s. time), and relative to object count (time v.s. total objects detected).
 > 2. Try to count the numbers of each block detected, how does this differ from template matching approach?
 > 3. Insert more timers inside the source code to identify the source of jitter during each step YOLO inference.
+> 4. Try running the same task using a smaller model (network/yolov5n_mario.onnx), observe and report the differences.
 
 **HINT:**
 
