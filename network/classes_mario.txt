@@ -1,0 +1,13 @@
+big_mario
+brick_block
+empty_block
+goal_pole
+goomba
+hard_block
+koopa
+little_mario
+mushroom
+mystery_block
+pipe
+pipe_head
+undestructible_block

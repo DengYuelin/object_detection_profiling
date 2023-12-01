@@ -139,6 +139,15 @@ python scripts/template_matching.py
 
 The given script detect empty blocks in each frame of [this](data\mario.mp4) video.
 
+Tweak the real-time scheduling parameters as discussed earlier, using `chrt` and `nice`:
+
+```sh
+# Execute as a **normal** program with niceness settings
+sudo nice -n $N python scripts/template_matching.py # N is niceness ranging from 19 to -20 where -20 is the highest priority
+# Execute as a real time program with priority settings
+sudo chrt -r $N python scripts/template_matching.py # N is priority ranging from 1 to 99 where 99 is the highest priority
+```
+
 > **TASKS:**
 >
 > 1. Implement code to measure the execution time of each frame and store as a file. Plot the execution time in both statistically (histogram), temporally (frame_num v.s. time), and relative to object count (time v.s. objects detected).
@@ -149,58 +158,56 @@ The given script detect empty blocks in each frame of [this](data\mario.mp4) vid
 
 Skip to [this](#deploy-a-pre-trained-yolo-v5-object-recognition-model-python) section if you prefer to use Python.
 
-Now we move on to object detection using DNN methods, for your convenience, we pre-trained YOLOv5
+Now we move on to object detection using DNN methods, for your convenience, we pre-trained YOLOv5 using [this](https://universe.roboflow.com/baptiste-hustaix-znm0u/mario-ia-b8iuw/dataset/1) open source dataset. You can refer to [this](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data) website to learn more.
 
-1. Get, modify, and compile the source code
+Compile the source code and fix any errors that show up.
 
-    Compile the source code and fix any errors that show up.
+```sh
+g++ -O3 src/yolo.cpp -o yolo_detection `pkg-config --cflags --libs opencv4`
+```
 
-    ```sh
-    g++ -O3 src/yolo.cpp -o yolo_example `pkg-config --cflags --libs opencv4`
-    ```
+Run the compiled inference program
 
-2. Run the compiled inference program
+```sh
+./yolo_detection # no additional information will be printed to terminal
+```
 
-    ```sh
-    ./yolo_example # no additional information will be printed to terminal
-    ```
+Tweak the real-time scheduling parameters as discussed earlier, using `chrt` and `nice`:
 
-    Tweak the real-time scheduling parameters as discussed earlier, using `chrt` and `nice`:
+```sh
+# Execute as a **normal** program with niceness settings
+sudo nice -n $N ./yolo_detection # N is niceness ranging from 19 to -20 where -20 is the highest priority
+# Execute as a real time program with priority settings
+sudo chrt -r $N ./yolo_detection # N is priority ranging from 1 to 99 where 99 is the highest priority
+```
 
-    ```sh
-    # Execute as a **normal** program with niceness settings
-    sudo nice -n $N ./yolo_example # N is niceness ranging from 19 to -20 where -20 is the highest priority
-    # Execute as a real time program with priority settings
-    sudo chrt -r $N ./yolo_example # N is priority ranging from 1 to 99 where 99 is the highest priority
-    ```
+> **TASKS:**
+>
+> 1. Implement code to measure the **total** execution time of each frame and store as a file. Plot the execution time in both statistically (histogram), temporally (frame_num v.s. time), and relative to object count (time v.s. total objects detected).
+> 2. Try to count the numbers of each block detected, how does this differ from template matching approach?
+> 3. Insert more timers inside the source code to identify the source of jitter during each step YOLO inference.
 
-3. Time YOLO inference. Your task is to insert timers inside the source code to identify the source of jitter during YOLO inference.
+**HINT:**
 
-    **HINT:**
-
-    ```cpp
-    // Select source video
-    cv::VideoCapture capture("your video.mp4");
-    // Get current time
-    tic = std::chrono::high_resolution_clock::now();
-    // Calculate clock difference
-    std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-    // Write to file
-    std::ofstream yourfile("yourfile.txt", std::ofstream::out | std::ofstream::trunc);
-    yourfile << "String" << data;
-    rt_data_file.close();
-    ```
-
-    Remove video labeling to decrease execution time.
-
-    [**Note for Daniel:** this part is logically disconnected from previous steps. First, we want to first probe the execution time of the entire detection network, end-to-end. Then, the students will find out that the processing time of each frame varies. We want to show that both from staistics (histogram) and temporally. Then we will go deeper into analyzing the code and find out where to insert the time probes.]
-
-4. Run a video with time-varying scene complexity through the detection pipeline. An example can be found [here](Link Missing). Examine how the processing time of each frame changes over time. What is the overall distribution of these processing times?
-
-5. Run the same video over a contour analysis pipeline (Reference: https://docs.opencv.org/4.x/dd/d49/tutorial_py_contour_features.html) -- the student needs to write a code to extract contours and cluster them based on hierarchies, and analyze each cluster for specific objects (e.g. find all circles that represent tables, and all rectangles that represent humans. There is no unique solution to this part, but we want to show that the combinatorial search of features explodes the complexity).
-
-6. Alternative to Step 5, the students can write a code for template matching using SIFT or ORB features. This also involves combinatorial search in KNN matching.
+```cpp
+// Get current time
+tic = std::chrono::high_resolution_clock::now();
+// Calculate clock difference
+std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
+// Write to file
+std::ofstream yourfile("yourfile.txt", std::ofstream::out | std::ofstream::trunc);
+yourfile << "String" << data;
+yourfile.close();
+```
 
 ### Deploy a pre-trained YOLOv5 object recognition model (Python)
 
 TODO: under construction
+
+## Other detection analysis
+
+1. Run another video with time-varying scene complexity through the detection pipeline, remember to change the pre-trained network. An example can be found [here](data/party.mp4). Examine how the processing time of each frame changes over time. What is the overall distribution of these processing times?
+
+2. Run the same video over a contour analysis pipeline (Reference: https://docs.opencv.org/4.x/dd/d49/tutorial_py_contour_features.html) -- the student needs to write a code to extract contours and cluster them based on hierarchies, and analyze each cluster for specific objects (e.g. find all circles that represent tables, and all rectangles that represent humans. There is no unique solution to this part, but we want to show that the combinatorial search of features explodes the complexity).
+
+3. Alternative to Step 5, the students can write a code for template matching using SIFT or ORB features. This also involves combinatorial search in KNN matching.
