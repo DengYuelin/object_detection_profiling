@@ -187,6 +187,7 @@ sudo chrt -r $N ./yolo_detection # N is priority ranging from 1 to 99 where 99 i
 > 2. Try to count the numbers of each block detected, how does this differ from template matching approach?
 > 3. Insert more timers inside the source code to identify the source of jitter during each step YOLO inference.
 > 4. Try running the same task using a smaller model (network/yolov5n_mario.onnx), observe and report the differences.
+> 5. Observe line 87 in the C++ code: `float \*classes_scores = data + 5;`, or python TODO:. Explain why the `+ 5` is there.
 
 **HINT:**
 
