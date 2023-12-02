@@ -81,7 +81,9 @@ sudo apt-get install libopencv-dev
 Alternatively, install OpenCV, Python version (not tested)
 
 ```bash
-sudo apt-get install python-opencv
+sudo apt-get install python3-opencv
+# other used packages
+sudo apt install python3-matplotlib
 ```
 
 **NOTE:** Python version can also be installed with `pip`.
@@ -90,7 +92,7 @@ With OpenCV installed, we can now preform all kinds of computer vision tasks. Cl
 
 ```sh
 mkdir ~/Project && cd ~/Project
-git https://github.com/DengYuelin/object_detection_profiling.git
+git clone https://github.com/DengYuelin/object_detection_profiling.git
 cd object_detection_profiling
 ```
 
@@ -127,7 +129,7 @@ If you open the figure (recommend coping it to your local system using [ssh](htt
 >
 > 1. Read through the code, explore using different template matching [methods](https://docs.opencv.org/3.4/df/dfb/group__imgproc__object.html#ga3a7850640f1fe1f58fe91a2d7583695d) and thresholds, also try detecting different [objects](examples/templates). Report on your findings.
 > 2. Identify a [method + threshold] combination for each object. (brick, empty, hard, and usdestructible block)
-> 3. BONUS, experiment detecting the location of Mario using template matching, what are the potential difficulties?
+> 3. Try detecting the location of Koopa using `examples/templates/koopa.png` as template in `examples/Source2.jpg`? What happens if you swith to `examples/Source3.jpg`? What are the potential problems in detecting objects like Koopa or Mario using template matching?
 
 Now that we understand the basics of template matching, we can proceed to analysis its WCET.
 
@@ -137,7 +139,7 @@ Try:
 python scripts/template_matching.py
 ```
 
-The given script detect empty blocks in each frame of [this](data\mario.mp4) video.
+The given script detect empty blocks in each frame of [this](data/mario.mp4) video.
 
 Tweak the real-time scheduling parameters as discussed earlier, using `chrt` and `nice`:
 
