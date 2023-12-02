@@ -1,4 +1,7 @@
 #include <fstream>
+#include <iostream>
+#include <vector>
+#include <cstddef>
 #include <opencv2/opencv.hpp>
 
 std::vector<std::string> load_class_list() {
@@ -29,8 +32,8 @@ const std::vector<cv::Scalar> colors = {
     cv::Scalar(255, 255, 0), cv::Scalar(0, 255, 0), cv::Scalar(0, 255, 255),
     cv::Scalar(255, 0, 0)};
 
-const float INPUT_WIDTH = 640.0;
-const float INPUT_HEIGHT = 640.0;
+const int INPUT_WIDTH = 640;
+const int INPUT_HEIGHT = 640;
 const float SCORE_THRESHOLD = 0.2;
 const float NMS_THRESHOLD = 0.4;
 const float CONFIDENCE_THRESHOLD = 0.4;
@@ -41,44 +44,51 @@ struct Detection {
   cv::Rect box;
 };
 
-cv::Mat format_yolov5(const cv::Mat &source) {
+/**
+ * @brief fit the input image to the smallest square, starting from the upper left
+ */
+cv::Mat make_square(const cv::Mat &source, int& out_size) {
   int col = source.cols;
   int row = source.rows;
-  int _max = MAX(col, row);
-  cv::Mat result = cv::Mat::zeros(_max, _max, CV_8UC3);
+  out_size = std::max(col, row);
+  cv::Mat result = cv::Mat::zeros(out_size, out_size, CV_8UC3);
   source.copyTo(result(cv::Rect(0, 0, col, row)));
   return result;
 }
 
-void detect(cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output,
+void detect(const cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output,
             std::vector<int> &date_record,
             const std::vector<std::string> &className) {
-  cv::Mat blob;
+  static cv::Mat blob;
 
   /*--------------------Pre-process--------------------*/
-  // Format image
-  auto input_image = format_yolov5(image);
-  // Inference
-  cv::dnn::blobFromImage(input_image, blob, 1. / 255.,
+  int pre_blob_image_size;
+  // Preprocessing
+  cv::dnn::blobFromImage(make_square(image, pre_blob_image_size), blob, 1. / 255.,
                          cv::Size(INPUT_WIDTH, INPUT_HEIGHT), cv::Scalar(),
                          true, false);
   net.setInput(blob);
-  std::vector<cv::Mat> outputs;
+  static std::vector<cv::Mat> outputs;
 
-  /*--------------------post-process--------------------*/
+  /*--------------------Main Inference-----------------*/
   net.forward(outputs, net.getUnconnectedOutLayersNames());
-  // Resizing factor.
-  float x_factor = input_image.cols / INPUT_WIDTH;
-  float y_factor = input_image.rows / INPUT_HEIGHT;
-  float *data = (float *)outputs[0].data;
 
+  /*--------------------Post-process-------------------*/
+  // Resizing factor
+  float resizing_factor = pre_blob_image_size / static_cast<float>(INPUT_WIDTH);
+
+  // max possible raw detections
+  const int rows = 25200;
+  // size of each raw detection
   const int dimensions = className.size() + 5;
-  const int rows = 25200;  // size of each info block
 
   // Initialize vectors to hold respective outputs while unwrapping detections.
   std::vector<int> class_ids;
   std::vector<float> confidences;
   std::vector<cv::Rect> boxes;
+
+  // start of the output data
+  float *data = (float *)outputs[0].data;
 
   for (int i = 0; i < rows; ++i) {
     float confidence = data[4];
@@ -101,10 +111,10 @@ void detect(cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output,
         float y = data[1];
         float w = data[2];
         float h = data[3];
-        int left = int((x - 0.5 * w) * x_factor);
-        int top = int((y - 0.5 * h) * y_factor);
-        int width = int(w * x_factor);
-        int height = int(h * y_factor);
+        int left = static_cast<int>((x - 0.5 * w) * resizing_factor);
+        int top = static_cast<int>((y - 0.5 * h) * resizing_factor);
+        int width = static_cast<int>(w * resizing_factor);
+        int height = static_cast<int>(h * resizing_factor);
         // Store good detections in the boxes vector.
         boxes.push_back(cv::Rect(left, top, width, height));
       }
@@ -131,6 +141,18 @@ void detect(cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output,
   date_record.push_back(inference_time);
 }
 
+/**
+ * @brief This function reads the video into the RAM, placing it in a vector of frames.
+ */
+void loadImages(cv::VideoCapture& videoIn, std::vector<cv::Mat>& frames) {
+  cv::Mat frame;
+  while (true) {
+    videoIn.read(frame);
+    if (frame.empty()) break;
+    frames.emplace_back(frame);
+  }
+}
+
 int main(int argc, char **argv) {
   std::vector<std::string> class_list = load_class_list();
   std::ofstream rt_data_file("runs/data.txt",
@@ -151,19 +173,16 @@ int main(int argc, char **argv) {
   load_net(net, false);
 
   std::vector<int> data_record;
-  int total_frames = 0;
 
-  while (true) {
-    capture.read(frame);
-    if (frame.empty()) {
-      std::cout << "End of stream\n";
-      break;
-    }
+  std::vector<cv::Mat> frames;
+  loadImages(capture, frames);
+  size_t total_frames = frames.size();
+  std::cout << "Loaded " << total_frames << " frames from the video stream.\n";
 
+  for (const auto& f: frames) {
     std::vector<Detection> output;
-    detect(frame, net, output, data_record, class_list);
+    detect(f, net, output, data_record, class_list);
 
-    total_frames++;
     int empty_block_count = 0;
     for (int i = 0; i < output.size(); ++i) {
       if (output[i].class_id == 2) {
@@ -178,7 +197,7 @@ int main(int argc, char **argv) {
   }
 
   rt_data_file.close();
-  std::cout << "Total frames: " << total_frames << "\n";
+  std::cout << "Completed processing " << total_frames << " frames.\n";
 
   return 0;
 }
