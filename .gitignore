@@ -1,4 +1,6 @@
-runs/*
+runs/*.txt
+runs/*.csv
+runs/*.log
 yolo_detection
 .vscode
 *.pyc
