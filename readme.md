@@ -206,7 +206,12 @@ yourfile.close();
 
 ### Deploy a pre-trained YOLOv5 object recognition model (Python)
 
-Refer to `scripts/yolo.py` for the executable source code. The implementation uses the same onnx model as the C++ example for main inferrence, but adopts the official post-processing implementation for the raw network output. The post-processing implementation is included in `scripts/utils/general.py`.
+Refer to `scripts/yolo.py` for the executable source code. The code can be run with:
+```sh
+python3 ./scripts/yolo.py
+```
+
+The implementation uses the same onnx model as the C++ example for main inferrence, but adopts the official post-processing implementation for the raw network output. The post-processing implementation is included in `scripts/utils/general.py`.
 
 Please refer back to the C++ section for instructions.
 
