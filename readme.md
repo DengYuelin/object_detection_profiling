@@ -158,7 +158,7 @@ sudo chrt -r $N python scripts/template_matching.py # N is priority ranging from
 
 ### Deploy a pre-trained YOLOv5 object recognition model (C++)
 
-Skip to [this](#deploy-a-pre-trained-yolo-v5-object-recognition-model-python) section if you prefer to use Python.
+Read [this](#deploy-a-pre-trained-yolo-v5-object-recognition-model-python) section first if you prefer to use Python.
 
 Now we move on to object detection using DNN methods, for your convenience, we pre-trained YOLOv5 using [this](https://universe.roboflow.com/baptiste-hustaix-znm0u/mario-ia-b8iuw/dataset/1) open source dataset. You can refer to [this](https://docs.ultralytics.com/yolov5/tutorials/train_custom_data) website to learn more.
 
@@ -206,7 +206,9 @@ yourfile.close();
 
 ### Deploy a pre-trained YOLOv5 object recognition model (Python)
 
-TODO: under construction
+Refer to `scripts/yolo.py` for the executable source code. The implementation uses the same onnx model as the C++ example for main inferrence, but adopts the official post-processing implementation for the raw network output. The post-processing implementation is included in `scripts/utils/general.py`.
+
+Please refer back to the C++ section for instructions.
 
 ## Other detection analysis
 

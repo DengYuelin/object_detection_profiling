@@ -34,7 +34,7 @@ const std::vector<cv::Scalar> colors = {
 
 const int INPUT_WIDTH = 640;
 const int INPUT_HEIGHT = 640;
-const float SCORE_THRESHOLD = 0.2;
+const float SCORE_THRESHOLD = 0.; // to match with the python implementation
 const float NMS_THRESHOLD = 0.4;
 const float CONFIDENCE_THRESHOLD = 0.4;
 

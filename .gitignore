@@ -1,3 +1,5 @@
 runs/*
 yolo_detection
 .vscode
+*.pyc
+**/__pycache__/
