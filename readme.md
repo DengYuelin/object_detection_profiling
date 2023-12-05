@@ -65,10 +65,10 @@ Follow the instructions [here](/setup_instructions.md) to setup your Pi.
 
     **NOTE:** When running the task over a `ssh` connection, a good practice is to use a terminal emulation tool (such as `screen`) to put your tasks to the local `stdout` buffer of the RTOS. This can prevent halts caused by output buffer filling up with an unstable connection [[Reference]](https://unix.stackexchange.com/questions/282973/do-programs-run-from-an-ssh-session-depend-on-the-connection).
 
-3.  Compare back and forth (switch which kernel to load on boot by editing `/boot/firmware/config.txt`. The stock kernel should be `kernel8.img`). Compare your results.
+3.  Compare execution time characteristics between a real-time kernel and a non-real-time kernel. You can specify which kernel to load on boot by editing `/boot/firmware/config.txt`. If you have followed the kernel patching procedures, the stock (non-real-time) kernel should be `kernel8.img`, and the real-time kernel is `rt-kernel8.img`. Repeat Step 2 on the non-real-time kernel and compare your results.
 
 > **TASKS:**
-> How does a realtime kernel compare to standard ones? What scheduling algorithm are you running? Report on your findings.
+> How does the latency and execution time jitter of the same program compare, between a real-time kernel and a non-real-time one? How does the latency and execution time jitter change with priority and niceness, and how does it compare with a real-time kernel? What scheduling algorithm are you running? Report on your findings.
 
 ## Running a computer vision task on Raspberry Pi
 
@@ -190,6 +190,8 @@ sudo chrt -r $N ./yolo_detection # N is priority ranging from 1 to 99 where 99 i
 > 3. Insert more timers inside the source code to identify the source of jitter during each step YOLO inference.
 > 4. Try running the same task using a smaller model (network/yolov5n_mario.onnx), observe and report the differences.
 > 5. Observe line 87 in the C++ code: `float \*classes_scores = data + 5;`, or python TODO:. Explain why the `+ 5` is there.
+> 6. Try running the detection code with the highest priority and least niceness. Put your process into the background with an `&` (e.g. `./yolo_detection &`). Now you free up the foreground terminal to execute other tasks. Try running `cyclictest` in the foreground as you have done earlier, but *use a default priority (20) and niceness (0)*. Does your `cyclictest` execute as expected? Change the priority and niceness settings of `cyclictest` and report what you find.
+> 7. Report any *physical anomalies* you observe on the Raspberry Pi when running the detection code with the highest priority and least niceness. Try to interpret why based on [the electrical schematics](https://datasheets.raspberrypi.com/rpi4/raspberry-pi-4-reduced-schematics.pdf) and forum discussions (Hint: it is related to how the OS services the GPIO pins).
 
 **HINT:**
 
