@@ -1,6 +1,5 @@
-runs/*.txt
-runs/*.csv
-runs/*.log
+runs/*
+!runs/.gitkeep
 yolo_detection
 .vscode
 *.pyc
