@@ -89,7 +89,7 @@ For those of you who are not familiar with text-based operating system, here are
 
 ## Running a computer vision task on Raspberry Pi (Python)
 
-If you prefer to use C++, refer to [this](cpp_instructions.md) document.
+If you prefer to use C++, refer to [this](cpp_instructions.md) document. (TODO: implement template matching in C++)
 
 Install OpenCV library:
 
@@ -164,9 +164,9 @@ This script iterate through each frame in the source video, and detect empty blo
 
 ```sh
 # Execute as a **normal** program with niceness settings
-sudo nice -n $N python scripts/template_matching.py # N is niceness ranging from 19 to -20 where -20 is the highest priority
+sudo nice -n $N python3 scripts/template_matching.py # N is niceness ranging from 19 to -20 where -20 is the highest priority
 # Execute as a real time program with priority settings
-sudo chrt -r $N python scripts/template_matching.py # N is priority ranging from 1 to 99 where 99 is the highest priority
+sudo chrt -r $N python3 scripts/template_matching.py # N is priority ranging from 1 to 99 where 99 is the highest priority
 ```
 
 ### Deploy a pre-trained YOLOv5 object recognition model
