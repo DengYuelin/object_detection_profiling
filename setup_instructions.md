@@ -104,7 +104,7 @@ Docker creates a containerized environemnt, much like a light-weight virtual mac
 4. Download `RT_PREEMPT` patch
 
     ```sh
-    wget https://cdn.kernel.org/pub/linux/kernel/projects/rt/6.1/patch-6.1.59-rt16.patch.xz
+    wget https://cdn.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patch-6.1.59-rt16.patch.xz
     ```
 
     **NOTE:** The `RT_PREEMPT` patch is applicable to Linux 6.1.59 kernel. When changing the kernel version by yourself, make sure to get the patch for the closest possible kernel version (in this case, patch version `6.1.59` is applied to kernel version `6.1.63`). The kernel version should be _no smaller than_ the patch version.
@@ -251,7 +251,7 @@ Alternatively, you can apply the PREEMPT_RT patch on the Pi, and compile it on t
     mkdir rpi-rt-linux-6.1
     cd rpi-rt-linux-6.1
     git clone -b stable_20231123 --depth=1 https://github.com/raspberrypi/linux
-    wget https://cdn.kernel.org/pub/linux/kernel/projects/rt/6.1/patch-6.1.59-rt16.patch.xz
+    wget https://cdn.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patch-6.1.59-rt16.patch.xz
     mkdir build
     ```
 
