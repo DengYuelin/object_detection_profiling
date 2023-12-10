@@ -301,7 +301,7 @@ Alternatively, you can apply the PREEMPT_RT patch on the Pi, and compile it on t
 4. Build the kernel with 4 threads (all that a Pi has)
 
     ```sh
-    make -j4 Image.gz modules dtbs
+    make O=../build/ -j4 Image.gz modules dtbs
     ```
 
     This step will take approx. 2 hours.
@@ -311,10 +311,13 @@ Alternatively, you can apply the PREEMPT_RT patch on the Pi, and compile it on t
     sudo make O=../build/ modules_install
     sudo cp -rd ../build/arch/arm64/boot/dts/broadcom/bcm*.dtb /boot/firmware/
     sudo cp -rd ../build/arch/arm64/boot/dts/overlays/*.dtb* /boot/firmware/overlays/
-    sudo cp -rd ../build/arch/arm64/boot/dts/overlays/README /boot/firmware/overlays/
     sudo cp ../build/arch/arm64/boot/Image.gz /boot/firmware/rt-kernel8.img
     ```
     Edit `/boot/firmware/config.txt` and add the following line:
+    ```
+    sudo vi /boot/firmware/config.txt
+    ```
+    then add
     ```
     kernel=rt-kernel8.img
     ```
