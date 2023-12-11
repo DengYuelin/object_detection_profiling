@@ -229,7 +229,7 @@ Docker creates a containerized environemnt, much like a light-weight virtual mac
     sudo cp -rd ./lib/* /media/$USER/rootfs/lib
     ```
 
-    Finally, edit `/media/$USER/bootfs/config.txt` file (`sudo nano /media/$USER/bootfs/config.txt`) and add the following line:
+    Finally, edit `/media/$USER/bootfs/config.txt` file (`sudo nano /media/$USER/bootfs/config.txt`) and **at the end** (the line after `[all]`) insert the following line:
 
     ```
     kernel=rt-kernel8.img
