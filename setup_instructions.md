@@ -148,10 +148,10 @@ Docker creates a containerized environemnt, much like a light-weight virtual mac
 
     ```sh
     cd arch/arm64/configs
-    cp bcm2711_defconfig bcm2711_rt_config
+    cp bcm2711_defconfig bcm2711_rt_defconfig
     ```
 
-    Inspect the file `bcm2711_rt_config` with a text editor (e.g. `nano bcm2711_rt_config`). Modify lines 1, 10 and insert a line after line 10:
+    Inspect the file `bcm2711_rt_defconfig` with a text editor (e.g. `nano bcm2711_rt_defconfig`). Modify lines 1, 10 and insert a line after line 10:
 
     ```diff
     @@ -1,4 +1,4 @@
@@ -197,7 +197,7 @@ Docker creates a containerized environemnt, much like a light-weight virtual mac
 
     ```sh
     export KERNEL=kernel8
-    make O=../build/ ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- bcm2711_rt_config
+    make O=../build/ ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- bcm2711_rt_defconfig
     ```
 
 8. Build the kernel with 8 threads (`-j8`, you can change the number if you want to utilize more CPU cores to accelerate the build.)
@@ -291,11 +291,11 @@ Alternatively, you can apply the PREEMPT_RT patch on the Pi, and compile it on t
 
     In the prompt showed up, select `Real Time` option in `General -> Preemption Model`. You need to append a suffix (e.g. `-v8-RT`) to your custom-built kernel name under `General -> Local version - append to kernel release`. Please ensure your customized kernel does not receive the same version string as the upstream kernel.
 
-    **Alternatively**, you can create a separate build config file derived from the default one. Refer to Step 7 in **Cross-compilation with a PC natively** section. For the derived config `bcm2711_rt_config`, your command will be:
+    **Alternatively**, you can create a separate build config file derived from the default one. Refer to Step 7 in **Cross-compilation with a PC natively** section. For the derived config `bcm2711_rt_defconfig`, your command will be:
 
     ```sh
     export KERNEL=kernel8
-    make O=../build/ bcm2711_rt_config
+    make O=../build/ bcm2711_rt_defconfig
     ```
 
 4. Build the kernel with 4 threads (all that a Pi has)
