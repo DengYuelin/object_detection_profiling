@@ -30,7 +30,7 @@ def main():
 
     # load input
     cap = cv2.VideoCapture(input)
-    all_frames = np.array([])
+    all_frames = np.array([], dtype=np.uint8)
     n_frames = 0
     if cap.isOpened():
         n_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
