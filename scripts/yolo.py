@@ -25,13 +25,18 @@ def build_model(is_cuda):
     return net
 
 
-colors = [(255, 255, 0), (0, 255, 0), (0, 255, 255), (255, 0, 0)]
+def load_capture():
+    capture = cv2.VideoCapture("data/mario.mp4")
+    return capture
 
-INPUT_WIDTH = 640
-INPUT_HEIGHT = 640
-SCORE_THRESHOLD = 0.2
-NMS_THRESHOLD = 0.4
-CONFIDENCE_THRESHOLD = 0.4
+
+def format_yolov5(frame):
+    # --------------------Pre-process--------------------
+    row, col, _ = frame.shape
+    _max = max(col, row)
+    result = np.zeros((_max, _max, 3), np.uint8)
+    result[0:row, 0:col] = frame
+    return result
 
 
 def detect(image, net):
@@ -42,14 +47,6 @@ def detect(image, net):
     # --------------------Main Inference-----------------
     preds = net.forward()
     return preds
-
-
-def load_capture():
-    capture = cv2.VideoCapture("data/mario.mp4")
-    return capture
-
-
-class_list = load_classes()
 
 
 def wrap_detection(input_image, output_data):
@@ -106,14 +103,16 @@ def wrap_detection(input_image, output_data):
     return result_class_ids, result_confidences, result_boxes
 
 
-def format_yolov5(frame):
+# ---------------------- Main Program -----------------------------
 
-    row, col, _ = frame.shape
-    _max = max(col, row)
-    result = np.zeros((_max, _max, 3), np.uint8)
-    result[0:row, 0:col] = frame
-    return result
+colors = [(255, 255, 0), (0, 255, 0), (0, 255, 255), (255, 0, 0)]
+class_list = load_classes()
 
+INPUT_WIDTH = 640
+INPUT_HEIGHT = 640
+SCORE_THRESHOLD = 0.2
+NMS_THRESHOLD = 0.4
+CONFIDENCE_THRESHOLD = 0.4
 
 # is_cuda = len(sys.argv) > 1 and sys.argv[1] == "cuda"
 
@@ -125,15 +124,19 @@ start = time.time_ns()
 current_frame = 0
 
 # store data
-frame_time_hist = np.zeros(shape=(total_frames, 1))
+frame_time_list = np.zeros(shape=(total_frames, 1))
 objects_detected = np.zeros(shape=(total_frames, 1))
 
 while True:
 
+    # This read() function loads the frame from external storage to memory.
+    # Therefore, it should be excluded from the inference timing section.
     _, frame = capture.read()
     if frame is None:
         print("End of stream")
         break
+
+    # start of in-memory image processing
 
     inputImage = format_yolov5(frame)
     outs = detect(inputImage, net)
@@ -147,8 +150,10 @@ while True:
 
     # TODO: measure and store the execution time and object count of each frame.
     frame_time = 0
-    frame_time_hist[current_frame - 1] = frame_time
+    frame_time_list[current_frame - 1] = frame_time
     objects_detected[current_frame - 1] = [len(boxes)]
+
+    # end of in-memory image processing
 
     # Uncomment to visualize the result on a graphical system
 
@@ -167,6 +172,6 @@ while True:
     #     break
 
 os.makedirs("runs/", exist_ok=True)
-np.save('runs/frame_time.npy', frame_time_hist)
+np.save('runs/frame_time.npy', frame_time_list)
 np.save('runs/objects_count.npy', objects_detected)
 print("Completed processing, total frames: " + str(total_frames))
