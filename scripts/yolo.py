@@ -1,7 +1,15 @@
 import cv2
 import time
-import sys
 import numpy as np
+import sys
+import os
+
+
+def load_classes():
+    class_list = []
+    with open("network/classes_mario.txt", "r") as f:
+        class_list = [cname.strip() for cname in f.readlines()]
+    return class_list
 
 
 def build_model(is_cuda):
@@ -17,6 +25,8 @@ def build_model(is_cuda):
     return net
 
 
+colors = [(255, 255, 0), (0, 255, 0), (0, 255, 255), (255, 0, 0)]
+
 INPUT_WIDTH = 640
 INPUT_HEIGHT = 640
 SCORE_THRESHOLD = 0.2
@@ -25,9 +35,11 @@ CONFIDENCE_THRESHOLD = 0.4
 
 
 def detect(image, net):
+    # --------------------Pre-process--------------------
     blob = cv2.dnn.blobFromImage(
         image, 1/255.0, (INPUT_WIDTH, INPUT_HEIGHT), swapRB=True, crop=False)
     net.setInput(blob)
+    # --------------------Main Inference-----------------
     preds = net.forward()
     return preds
 
@@ -37,17 +49,11 @@ def load_capture():
     return capture
 
 
-def load_classes():
-    class_list = []
-    with open("network/classes_mario.txt", "r") as f:
-        class_list = [cname.strip() for cname in f.readlines()]
-    return class_list
-
-
 class_list = load_classes()
 
 
 def wrap_detection(input_image, output_data):
+    # --------------------Post-process-------------------
     class_ids = []
     confidences = []
     boxes = []
@@ -62,13 +68,15 @@ def wrap_detection(input_image, output_data):
     for r in range(rows):
         row = output_data[r]
         confidence = row[4]
+        # Discard bad detections and continue.
         if confidence >= 0.4:
-
             classes_scores = row[5:]
             _, _, _, max_indx = cv2.minMaxLoc(classes_scores)
+            # Perform minMaxLoc and acquire index of best class score.
             class_id = max_indx[1]
+            # Continue if the class score is above the threshold.
             if (classes_scores[class_id] > .25):
-
+                # Store class ID and confidence in the pre-defined respective vectors.
                 confidences.append(confidence)
 
                 class_ids.append(class_id)
@@ -79,9 +87,11 @@ def wrap_detection(input_image, output_data):
                 top = int((y - 0.5 * h) * y_factor)
                 width = int(w * x_factor)
                 height = int(h * y_factor)
+                # Store good detections in the boxes vector.
                 box = np.array([left, top, width, height])
                 boxes.append(box)
 
+    # --------------------Non Maximum Suppression--------------------
     indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.25, 0.45)
 
     result_class_ids = []
@@ -105,15 +115,18 @@ def format_yolov5(frame):
     return result
 
 
-colors = [(255, 255, 0), (0, 255, 0), (0, 255, 255), (255, 0, 0)]
-
 # is_cuda = len(sys.argv) > 1 and sys.argv[1] == "cuda"
 
 net = build_model(False)
 capture = load_capture()
+total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
 start = time.time_ns()
-total_frames = 0
+current_frame = 0
+
+# store data
+frame_time_hist = np.zeros(shape=(total_frames, 1))
+objects_detected = np.zeros(shape=(total_frames, 1))
 
 while True:
 
@@ -127,9 +140,17 @@ while True:
 
     class_ids, confidences, boxes = wrap_detection(inputImage, outs[0])
 
-    total_frames += 1
+    current_frame += 1
 
-    # Uncomment to visulize
+    print("total " + str(len(boxes)) +
+          " identified objects in frame " + str(current_frame))
+
+    # TODO: measure and store the execution time and object count of each frame.
+    frame_time = 0
+    frame_time_hist[current_frame - 1] = frame_time
+    objects_detected[current_frame - 1] = [len(boxes)]
+
+    # Uncomment to visualize the result on a graphical system
 
     # for (classid, confidence, box) in zip(class_ids, confidences, boxes):
     #     color = colors[int(classid) % len(colors)]
@@ -145,4 +166,7 @@ while True:
     #     print("finished by user")
     #     break
 
-print("Total frames: " + str(total_frames))
+os.makedirs("runs/", exist_ok=True)
+np.save('runs/frame_time.npy', frame_time_hist)
+np.save('runs/objects_count.npy', objects_detected)
+print("Completed processing, total frames: " + str(total_frames))

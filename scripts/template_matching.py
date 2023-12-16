@@ -59,7 +59,7 @@ while True:
     # detect empty block
     empty_block_loc = detect(frame_gray, empty_block, cv.TM_CCOEFF_NORMED, 0.9)
     print(str(len(empty_block_loc[0])) +
-          " empty block detected at frame " + str(total_frames))
+          " empty block detected at frame " + str(current_frame))
     # TODO: detect brick_block, hard_block, and undestructible_block
     # Insert your code here
 
