@@ -15,15 +15,15 @@ The purpose of this comparison is to analyze neural network inference time (not 
 
 ### Install RTOS on Raspberry Pi
 
-Follow the instructions [here](/setup_instructions.md) to setup your Pi with the PREEMPT_RT RTOS kernel.
+Follow the instructions [here](/setup_instructions.md) to set up your Pi with the PREEMPT_RT RTOS kernel.
 
 ### Appendix: Editing files in Pi OS Lite
 
-For those of you who are not familiar with text-based operating system, here are some quick tutorials to edit files:
+For those of you who are not familiar with text-based operating systems, here are some quick tutorials to edit files:
 
 1. [SSH](https://www.ssh.com/academy/ssh/protocol)
    [A beginner's tutorial](https://itsfoss.com/ssh-into-raspberry/)
-2. [VIM](https://www.vim.org/) allows you to edit files in command line.
+2. [VIM](https://www.vim.org/) allows you to edit files in the command line.
    See [how to get started with vim](https://opensource.com/article/19/3/getting-started-vim).
 3. [SSH + VSCode](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)
    Use this extension with VSCode to browse and edit files.
@@ -81,10 +81,10 @@ Follow the instructions below to verify your installation and learn about kernel
 
     -   More on niceness vs. priority can refer to [this forum post](https://askubuntu.com/questions/656771/process-niceness-vs-priority).
 
-    **NOTE:** When running the task over a `ssh` connection, a good practice is to use a terminal emulation tool (such as `screen`) to put your tasks to the local `stdout` buffer of the RTOS. This can prevent halts caused by output buffer filling up with an unstable connection [[Reference]](https://unix.stackexchange.com/questions/282973/do-programs-run-from-an-ssh-session-depend-on-the-connection).
+    **NOTE:** When running the task over an `ssh` connection, a good practice is to use a terminal emulation tool (such as `screen`) to put your tasks to the local `stdout` buffer of the RTOS. This can prevent halts caused by output buffer filling up with an unstable connection [[Reference]](https://unix.stackexchange.com/questions/282973/do-programs-run-from-an-ssh-session-depend-on-the-connection).
 
 3.  Compare execution time characteristics between a real-time kernel and a non-real-time kernel. You can specify which kernel to load on boot by editing `/boot/firmware/config.txt`. If you have followed the kernel patching procedures, the stock (non-real-time) kernel should be `kernel8.img`, and the real-time kernel is `rt-kernel8.img`. Repeat Step 2 on the non-real-time kernel and compare your results. 
- **NOTE:** This will be your last time using the default "PREEMPT" kernel in this project. Switch to back to "PREEMPT_RT" kernel before moving on to next section.
+ **NOTE:** This will be your last time using the default "PREEMPT" kernel in this project. Switch back to "PREEMPT_RT" kernel before moving on to the next section.
 
 > **TASKS:**
 > Answer the following questions:
@@ -128,14 +128,14 @@ The base code is provided to you, try:
 python3 scripts/template_matching_example.py examples/Source.jpg examples/templates/empty_block.png TM_CCOEFF_NORMED 0.9
 ```
 
-You should see an output like:
+You should see an output like this:
 
 ```sh
 2 objects detected using method TM_CCOEFF_NORMED with a threshold of 0.9
 Result saved to runs/tm_result.png
 ```
 
-If you open the figure (recommend coping it to your local system using [ssh](https://stackoverflow.com/questions/30553428/copying-files-from-server-to-local-computer-using-ssh)), you should see something like
+If you open the figure (recommend copying it to your local system using [ssh](https://stackoverflow.com/questions/30553428/copying-files-from-server-to-local-computer-using-ssh)), you should see something like
 
 <p align="center">
   <img src="examples/tm_result.png" />
@@ -150,15 +150,15 @@ where detected objects are highlighted with red bounding boxes.
 
 #### WCET analysis of template matching
 
-In this section, we will write code to preform template matching on [this](data/mario.mp4) video, and record the execution time of each frame.
+In this section, we will write code to perform template matching on [this](data/mario.mp4) video, and record the execution time of each frame.
 
-The code framework if provide to you, try:
+The code framework is provided to you, try:
 
 ```sh
 python3 scripts/template_matching.py
 ```
 
-The given script iterate through each frame in the source video, and detect empty blocks. Your job is to modify the given script, and complete the following tasks in order.
+The given script iterates through each frame in the source video, and detects empty blocks. Your job is to modify the given script, and complete the following tasks in order.
 
 > **TASKS:**
 >
@@ -185,11 +185,11 @@ Refer to `scripts/yolo.py` for the executable source code. The code can be run w
 python3 ./scripts/yolo.py
 ```
 
-**NOTE:** The implementation uses the same onnx model as the C++ example for main inference, but adopts the official post-processing implementation for the raw network output. The post-processing implementation is included in `scripts/utils/general.py`.
+**NOTE:** The implementation now uses the same implementation model as the C++ example for main inference.
 
 #### Understanding the basics
 
-Research and answer the following question to make sure you understand how YOLO inference work.
+Research and answer the following question to make sure you understand how YOLO inference works.
 
 > **TASKS:**
 > Answer the following questions:
@@ -197,7 +197,7 @@ Research and answer the following question to make sure you understand how YOLO 
 > 1. How many types of features can [this](network/yolov5s_mario.onnx) custom pre-trained network detect?
 > 2. What is the difference between a "small"(yolov5s.onnx) model and a "nano"(yolov5n.onnx) model? Refer to [this](https://github.com/ultralytics/yolov5#why-yolov5) page to learn more.
 > 3. Read through the given code, what is the input and output of "Pre-processing"? What about "Main inference" and "Post-processing"?
-> 4. How do you interpret the output `detection_list`? Report its data structure and code to extract useful information form the list. What can you do if you are only interested in the number and location of one type (class) of object?
+> 4. How do you interpret the output `detection_list`? Report its data structure and code to extract useful information from the list. What can you do if you are only interested in the number and location of one type (class) of object?
 
 #### WCET analysis of YOLO inference
 
