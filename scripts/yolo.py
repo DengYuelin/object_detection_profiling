@@ -1,100 +1,172 @@
-import numpy as np
 import cv2
-import onnxruntime
-import torch
-from utils.general import non_max_suppression
+import time
+import numpy as np
+import sys
+import os
 
 
-class Detection:
-    def __init__(self, x, y, w, h, conf, id):
-        self.class_id = int(id)
-        self.confidence = conf
-        self.box_upper_left = (x, y)
-        self.box_lower_right = (x + w, y + h)
-
-    @classmethod
-    def draw(cls, img, colormap):
-        return cv2.rectangle(
-            img, cls.box_upper_left, cls.box_lower_right, colormap[cls.class_id]
-        )
+def load_classes():
+    class_list = []
+    with open("network/classes_mario.txt", "r") as f:
+        class_list = [cname.strip() for cname in f.readlines()]
+    return class_list
 
 
-def main():
-    input = "data/mario.mp4"
-    classes = "network/classes_mario.txt"
-    model = "network/yolov5s_mario.onnx"
-
-    # set model parameters
-    conf_thres = 0.4  # NMS confidence threshold
-    iou_thres = 0.4  # NMS IoU threshold
-
-    # load input
-    cap = cv2.VideoCapture(input)
-    all_frames = np.array([], dtype=np.uint8)
-    n_frames = 0
-    if cap.isOpened():
-        n_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        ret, frame = cap.read()
-        if ret is False:
-            raise RuntimeError("Input video is empty.")
-        all_frames.resize([n_frames, frame.shape[0], frame.shape[1], frame.shape[2]])
-        all_frames[0] = frame
+def build_model(is_cuda):
+    net = cv2.dnn.readNet("network/yolov5s_mario.onnx")
+    if is_cuda:
+        print("Attempty to use CUDA")
+        net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+        net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
     else:
-        raise RuntimeError("Input cannot be opened.")
-    for n in range(1, n_frames):
-        # vid_capture.read() methods returns a tuple, first element is a bool
-        # and the second is frame
-        ret, frame = cap.read()
-        if ret is True:
-            all_frames[n] = frame
-        else:
-            break
+        print("Running on CPU")
+        net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+        net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+    return net
 
-    # load model
-    session = onnxruntime.InferenceSession(model, None)
-    input_name = session.get_inputs()[0].name
-    output_name = session.get_outputs()[0].name
 
-    # load classes
-    classes_list = []
-    with open(classes, "r") as f:
-        classes_list = f.readlines()
+colors = [(255, 255, 0), (0, 255, 0), (0, 255, 255), (255, 0, 0)]
 
-    for n in range(0, n_frames):
-        # pre-processing
-        max_dim = np.max(all_frames[n].shape)
-        nn_input_frame = all_frames[n]
-        nn_input_frame.resize(max_dim, max_dim, 3)  # zero-padding
-        nn_input_frame = cv2.resize(nn_input_frame, dsize=(640, 640))  # scaling
-        nn_input_frame = nn_input_frame.transpose()[-1:-4:-1]  # dim switching
-        nn_input_frame = [nn_input_frame.astype(np.float32) / 255.0]  # normalizing
+INPUT_WIDTH = 640
+INPUT_HEIGHT = 640
+SCORE_THRESHOLD = 0.2
+NMS_THRESHOLD = 0.4
+CONFIDENCE_THRESHOLD = 0.4
 
-        # main inference
-        frame_result = session.run([output_name], {input_name: nn_input_frame})[0]
 
-        # post-processing
-        pred = non_max_suppression(torch.from_numpy(frame_result), conf_thres, iou_thres)
-        scale_factor = max_dim / 640.0
-        detection_list = []
-        for detection in pred[0]:
-            # FIXME: the detection results look very awkard. The bounding boxes are not stable as they are in the C++ version, and they are misplaced.
-            x = detection[0]
-            y = detection[1]
-            w = detection[2]
-            h = detection[3]
-            left = (x - 0.5 * w) * scale_factor
-            upper = (y - 0.5 * h) * scale_factor
-            w *= scale_factor
-            h *= scale_factor
-            detection_list.append(Detection(left, upper, w, h, detection[4], detection[5]))
+def detect(image, net):
+    # --------------------Pre-process--------------------
+    blob = cv2.dnn.blobFromImage(
+        image, 1/255.0, (INPUT_WIDTH, INPUT_HEIGHT), swapRB=True, crop=False)
+    net.setInput(blob)
+    # --------------------Main Inference-----------------
+    preds = net.forward()
+    return preds
 
-            # For visualization on a graphical system
-            # cv2.rectangle(all_frames[n], (int(left), int(upper)), (int(left+w), int(upper+h)), (0, 255, 0), 1)
 
-        # cv2.imshow("Detection result", all_frames[n])
-        # cv2.waitKey(1)
+def load_capture():
+    capture = cv2.VideoCapture("data/mario.mp4")
+    return capture
 
-        print(str(len(detection_list)) + " identified objects in frame " + str(n))
 
-if __name__ == "__main__":
-    main()
+class_list = load_classes()
+
+
+def wrap_detection(input_image, output_data):
+    # --------------------Post-process-------------------
+    class_ids = []
+    confidences = []
+    boxes = []
+
+    rows = output_data.shape[0]
+
+    image_width, image_height, _ = input_image.shape
+
+    x_factor = image_width / INPUT_WIDTH
+    y_factor = image_height / INPUT_HEIGHT
+
+    for r in range(rows):
+        row = output_data[r]
+        confidence = row[4]
+        # Discard bad detections and continue.
+        if confidence >= 0.4:
+            classes_scores = row[5:]
+            _, _, _, max_indx = cv2.minMaxLoc(classes_scores)
+            # Perform minMaxLoc and acquire index of best class score.
+            class_id = max_indx[1]
+            # Continue if the class score is above the threshold.
+            if (classes_scores[class_id] > .25):
+                # Store class ID and confidence in the pre-defined respective vectors.
+                confidences.append(confidence)
+
+                class_ids.append(class_id)
+
+                x, y, w, h = row[0].item(), row[1].item(
+                ), row[2].item(), row[3].item()
+                left = int((x - 0.5 * w) * x_factor)
+                top = int((y - 0.5 * h) * y_factor)
+                width = int(w * x_factor)
+                height = int(h * y_factor)
+                # Store good detections in the boxes vector.
+                box = np.array([left, top, width, height])
+                boxes.append(box)
+
+    # --------------------Non Maximum Suppression--------------------
+    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.25, 0.45)
+
+    result_class_ids = []
+    result_confidences = []
+    result_boxes = []
+
+    for i in indexes:
+        result_confidences.append(confidences[i])
+        result_class_ids.append(class_ids[i])
+        result_boxes.append(boxes[i])
+
+    return result_class_ids, result_confidences, result_boxes
+
+
+def format_yolov5(frame):
+
+    row, col, _ = frame.shape
+    _max = max(col, row)
+    result = np.zeros((_max, _max, 3), np.uint8)
+    result[0:row, 0:col] = frame
+    return result
+
+
+# is_cuda = len(sys.argv) > 1 and sys.argv[1] == "cuda"
+
+net = build_model(False)
+capture = load_capture()
+total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+
+start = time.time_ns()
+current_frame = 0
+
+# store data
+frame_time_hist = np.zeros(shape=(total_frames, 1))
+objects_detected = np.zeros(shape=(total_frames, 1))
+
+while True:
+
+    _, frame = capture.read()
+    if frame is None:
+        print("End of stream")
+        break
+
+    inputImage = format_yolov5(frame)
+    outs = detect(inputImage, net)
+
+    class_ids, confidences, boxes = wrap_detection(inputImage, outs[0])
+
+    current_frame += 1
+
+    print("total " + str(len(boxes)) +
+          " identified objects in frame " + str(current_frame))
+
+    # TODO: measure and store the execution time and object count of each frame.
+    frame_time = 0
+    frame_time_hist[current_frame - 1] = frame_time
+    objects_detected[current_frame - 1] = [len(boxes)]
+
+    # Uncomment to visualize the result on a graphical system
+
+    # for (classid, confidence, box) in zip(class_ids, confidences, boxes):
+    #     color = colors[int(classid) % len(colors)]
+    #     cv2.rectangle(frame, box, color, 2)
+    #     cv2.rectangle(frame, (box[0], box[1] - 20),
+    #                   (box[0] + box[2], box[1]), color, -1)
+    #     cv2.putText(frame, class_list[classid], (box[0],
+    #                 box[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, .5, (0, 0, 0))
+
+    # cv2.imshow("output", frame)
+
+    # if cv2.waitKey(1) > -1:
+    #     print("finished by user")
+    #     break
+
+os.makedirs("runs/", exist_ok=True)
+np.save('runs/frame_time.npy', frame_time_hist)
+np.save('runs/objects_count.npy', objects_detected)
+print("Completed processing, total frames: " + str(total_frames))
