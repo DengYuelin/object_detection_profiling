@@ -74,21 +74,27 @@ def main():
 
         # post-processing
         pred = non_max_suppression(torch.from_numpy(frame_result), conf_thres, iou_thres)
-        scale_factor = max_dim / 640
+        scale_factor = max_dim / 640.0
         detection_list = []
         for detection in pred[0]:
-            x = detection[0]
-            y = detection[1]
-            w = detection[2]
-            h = detection[3]
-            left = (x - 0.5 * w) * scale_factor
-            upper = (y - 0.5 * w) * scale_factor
-            w *= scale_factor
-            h *= scale_factor
+            # FIXME: the detection results look very awkard. The bounding boxes are not stable as they are in the C++ version, and many of them are misplaced.
+            y1 = detection[0]
+            x1 = detection[1]
+            y2 = detection[2]
+            x2 = detection[3]
+            left = x1 * scale_factor
+            upper = y1 * scale_factor
+            w = (x2 - x1) * scale_factor
+            h = (y2 - y1) * scale_factor
             detection_list.append(Detection(left, upper, w, h, detection[4], detection[5]))
 
-        print(str(len(detection_list)) + " identified objects in frame " + str(n))
+            # For visualization on a graphical system
+            # cv2.rectangle(all_frames[n], (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 1)
 
+        # cv2.imshow("Detection result", all_frames[n])
+        # cv2.waitKey(1)
+
+        print(str(len(detection_list)) + " identified objects in frame " + str(n))
 
 if __name__ == "__main__":
     main()

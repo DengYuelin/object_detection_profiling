@@ -57,9 +57,9 @@ cv::Mat make_square(const cv::Mat &source, int& out_size) {
 }
 
 void detect(const cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &output,
-            std::vector<int> &date_record,
+            std::vector<int> &data_record,
             const std::vector<std::string> &className) {
-  static cv::Mat blob;
+  cv::Mat blob;
 
   /*--------------------Pre-process--------------------*/
   int pre_blob_image_size;
@@ -68,15 +68,12 @@ void detect(const cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &out
                          cv::Size(INPUT_WIDTH, INPUT_HEIGHT), cv::Scalar(),
                          true, false);
   net.setInput(blob);
-  static std::vector<cv::Mat> outputs;
 
   /*--------------------Main Inference-----------------*/
+  std::vector<cv::Mat> outputs;
   net.forward(outputs, net.getUnconnectedOutLayersNames());
 
   /*--------------------Post-process-------------------*/
-  // Resizing factor
-  float resizing_factor = pre_blob_image_size / static_cast<float>(INPUT_WIDTH);
-
   // max possible raw detections
   const int rows = 25200;
   // size of each raw detection
@@ -107,16 +104,10 @@ void detect(const cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &out
 
         class_ids.push_back(class_id.x);
 
-        float x = data[0];
-        float y = data[1];
-        float w = data[2];
-        float h = data[3];
-        int left = static_cast<int>((x - 0.5 * w) * resizing_factor);
-        int top = static_cast<int>((y - 0.5 * h) * resizing_factor);
-        int width = static_cast<int>(w * resizing_factor);
-        int height = static_cast<int>(h * resizing_factor);
+        int left = static_cast<int>(data[0] - 0.5 * data[2]);
+        int top = static_cast<int>(data[1] - 0.5 * data[3]);
         // Store good detections in the boxes vector.
-        boxes.push_back(cv::Rect(left, top, width, height));
+        boxes.push_back(cv::Rect(left, top, static_cast<int>(data[2]), static_cast<int>(data[3])));
       }
     }
 
@@ -127,26 +118,32 @@ void detect(const cv::Mat &image, cv::dnn::Net &net, std::vector<Detection> &out
   std::vector<int> nms_result;
   cv::dnn::NMSBoxes(boxes, confidences, SCORE_THRESHOLD, NMS_THRESHOLD,
                     nms_result);
+
+  // Resizing factor
+  float resizing_factor = pre_blob_image_size / static_cast<float>(INPUT_WIDTH);
   for (int i = 0; i < nms_result.size(); i++) {
     int idx = nms_result[i];
     Detection result;
     result.class_id = class_ids[idx];
     result.confidence = confidences[idx];
-    result.box = boxes[idx];
-    output.push_back(result);
+    result.box.height = static_cast<int>(boxes[idx].height * resizing_factor);
+    result.box.width = static_cast<int>(boxes[idx].width * resizing_factor);
+    result.box.x = static_cast<int>(boxes[idx].x * resizing_factor);
+    result.box.y = static_cast<int>(boxes[idx].y * resizing_factor);
+    output.emplace_back(result);
   }
 
   // TODO: measure and store the execution time and object count of each frame.
   int inference_time = 0;
-  date_record.push_back(inference_time);
+  data_record.emplace_back(inference_time);
 }
 
 /**
  * @brief This function reads the video into the RAM, placing it in a vector of frames.
  */
 void loadImages(cv::VideoCapture& videoIn, std::vector<cv::Mat>& frames) {
-  cv::Mat frame;
   while (true) {
+    cv::Mat frame;
     videoIn.read(frame);
     if (frame.empty()) break;
     frames.emplace_back(frame);
@@ -162,7 +159,6 @@ int main(int argc, char **argv) {
     std::cout << class_list[i].c_str() << std::endl;
   }
 
-  cv::Mat frame;
   cv::VideoCapture capture("data/mario.mp4");
   if (!capture.isOpened()) {
     std::cerr << "Error opening video file\n";
@@ -179,21 +175,34 @@ int main(int argc, char **argv) {
   size_t total_frames = frames.size();
   std::cout << "Loaded " << total_frames << " frames from the video stream.\n";
 
-  for (const auto& f: frames) {
-    std::vector<Detection> output;
-    detect(f, net, output, data_record, class_list);
+  std::vector<std::vector<int>> detection_count(total_frames);
+  for (auto& d : detection_count) {
+    d.resize(class_list.size(), 0);
+  }
 
-    int empty_block_count = 0;
+  for (size_t n = 0; n < total_frames; n++) {
+    std::vector<Detection> output;
+    detect(frames[n], net, output, data_record, class_list);
+
+    // sort all detections into a histogram
     for (int i = 0; i < output.size(); ++i) {
-      if (output[i].class_id == 2) {
-        empty_block_count++;
-      }
+      detection_count[n][output[i].class_id] ++;
+      // For visualizing the result on a graphical system
+      // cv::rectangle(frames[n], output[i].box, cv::Scalar(0, 255, 0));
     }
+
+    // For visualizing the result on a graphical system
+    /*
+    cv::imshow("Detection result", frames[n]);
+    cv::waitKey(1);
+    */
+
     // TODO: count and store the numbers of other other blocks
 
-    std::cout << empty_block_count << "\tempty blocks detected" << std::endl;
-    rt_data_file << empty_block_count << "\tempty blocks detected using\t"
-                 << data_record.at(0) << "\tμs" << std::endl;
+    unsigned int time_taken_us = 0;
+    std::cout << " total " << output.size() << " \tidentified objects in frame\t" << n << std::endl;
+    rt_data_file << output.size() << "\tidentified objects in frame\t" << n
+                 << "\tusing\t" << time_taken_us << "\tμs" << std::endl;
   }
 
   rt_data_file.close();
