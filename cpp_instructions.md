@@ -23,7 +23,7 @@ In this section, we will learn the basics of template matching, and explore its 
 The base code is provided to you, try:
 
 ```sh
-g++ -O3 src/templet_matching_example.cpp -o tm_example `pkg-config --cflags --libs opencv4`
+g++ -O3 src/template_matching_example.cpp -o tm_example `pkg-config --cflags --libs opencv4`
 ```
 
 Run the compiled program
@@ -57,7 +57,16 @@ where detected objects are highlighted with red bounding boxes.
 In this section, we will write code to preform template matching on [this](data/mario.mp4) video, and record the execution time of each frame.
 
 The code framework if provide to you, try:
-TODO: under construction
+
+```sh
+g++ -O3 src/template_matching.cpp -o template_matching `pkg-config --cflags --libs opencv4`
+```
+
+Run the compiled program
+
+```sh
+./template_matching
+```
 
 This source code iterate through each frame in the source video, and detect empty blocks. Your job is to modify the given source code , and complete the following tasks in order.
 

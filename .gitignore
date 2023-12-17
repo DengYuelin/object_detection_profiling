@@ -1,5 +1,7 @@
 runs/*
 !runs/.gitkeep
+tm_example
+template_matching
 yolo_detection
 .vscode
 *.pyc
