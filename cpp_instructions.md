@@ -21,7 +21,16 @@ cd object_detection_profiling
 In this section, we will learn the basics of template matching, and explore its time consumption when detecting multiple objects.
 
 The base code is provided to you, try:
-TODO: under construction
+
+```sh
+g++ -O3 src/templet_matching_example.cpp -o tm_example `pkg-config --cflags --libs opencv4`
+```
+
+Run the compiled program
+
+```sh
+./tm_example examples/Source.jpg examples/templates/brick_block.png TM_CCOEFF_NORMED 0.9
+```
 
 You should see an output like:
 
@@ -40,8 +49,8 @@ where detected objects are highlighted with red bounding boxes.
 
 > **TASKS:**
 >
-> 1. Read through the code, explore using different template matching [methods](https://docs.opencv.org/3.4/df/dfb/group__imgproc__object.html#ga3a7850640f1fe1f58fe91a2d7583695d) and thresholds, also try detecting different [objects](examples/templates). Identify a [method + threshold] combination for each "block". (brick, empty, hard, and usdestructible block)
-> 2. Based on your observations thus far, forecast how the execution time is affected by the number of objects depicted in the source figure. Additionally, predict on how the variety of object types to be identified might influence the execution time.
+> 1. Read through the code, explore using different template matching [methods](https://docs.opencv.org/3.4/df/dfb/group__imgproc__object.html#ga3a7850640f1fe1f58fe91a2d7583695d) and thresholds, also try detecting different [objects](examples/templates). Identify and report a [method + threshold] combination for each "block". (brick, empty, hard, and usdestructible block)
+> 2. Based on your observations thus far, forecast how the execution time is affected by the number of objects depicted in the source figure. Additionally, predict on how the variety of object types to be identified might influence the total execution time.
 
 #### WCET analysis of template matching
 
@@ -54,11 +63,11 @@ This source code iterate through each frame in the source video, and detect empt
 
 > **TASKS:**
 >
-> 1. Implement code to measure the execution time of each frame and store as a file. Plot the execution time in both statistically (histogram), temporally (frame_num v.s. time), and relative to object count (time v.s. objects detected).
-> 2. Implement detection of all four types of blocks. Record and plot the execution time again, how did it change?
-> 3. Report what are the impact factors to the WCET of template matching of multiple objects.
+> 1. Implement code to measure the execution time of each frame and store your data as a file. Plot the execution time statistically (histogram), temporally (frame_num v.s. time), and relative to object count (time v.s. objects detected). Include all three figures in your report.
+> 2. Implement detection of all four types of blocks simultaneously. Record and plot the execution time again, how did it change? Include three new figures and your analysis.
+> 3. What are the impact factors to the WCET of template matching of multiple objects you observed, does this match with your prediction in the previous section?
 
-**NOTE:** Tweak the real-time scheduling parameters as discussed earlier, using `chrt` and `nice` to reduce system latency and jitter:
+**NOTE:** Tweak the real-time scheduling parameters as discussed earlier, using the command of your choice to reduce system latency and jitter:
 
 ```sh
 # Execute as a **normal** program with niceness settings
