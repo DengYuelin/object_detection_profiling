@@ -83,19 +83,19 @@ Follow the instructions below to verify your installation and learn about kernel
 
     **NOTE:** When running the task over an `ssh` connection, a good practice is to use a terminal emulation tool (such as `screen`) to put your tasks to the local `stdout` buffer of the RTOS. This can prevent halts caused by output buffer filling up with an unstable connection [[Reference]](https://unix.stackexchange.com/questions/282973/do-programs-run-from-an-ssh-session-depend-on-the-connection).
 
-3.  Compare execution time characteristics between a real-time kernel and a non-real-time kernel. You can specify which kernel to load on boot by editing `/boot/firmware/config.txt`. If you have followed the kernel patching procedures, the stock (non-real-time) kernel should be `kernel8.img`, and the real-time kernel is `rt-kernel8.img`. Repeat Step 2 on the non-real-time kernel and compare your results. 
- **NOTE:** This will be your last time using the default "PREEMPT" kernel in this project. Switch back to "PREEMPT_RT" kernel before moving on to the next section.
+3.  Compare execution time characteristics between a real-time kernel and a non-real-time kernel. You can specify which kernel to load on boot by editing `/boot/firmware/config.txt`. If you have followed the kernel patching procedures, the stock (non-real-time) kernel should be `kernel8.img`, and the real-time kernel is `rt-kernel8.img`. Repeat Step 2 on the non-real-time kernel and compare your results.
+    **NOTE:** This will be your last time using the default "PREEMPT" kernel in this project. Switch back to "PREEMPT_RT" kernel before moving on to the next section.
 
 > **TASKS:**
 > Answer the following questions:
 >
 > 1. What is the difference between a PREEMPT kernel and a PREEMPT_RT kernel? What scheduling algorithms are available? Refer to [this](https://wiki.linuxfoundation.org/realtime/start) page for more information.
 > 2. How does the latency and execution time jitter of the same program compare, between a real-time kernel and a non-real-time one?
-> 3. How does the latency and execution time jitter change with priority and niceness? Report your choice of command if you were to execute a task with high priority. (You will need to use this command again in the following sections) 
+> 3. How does the latency and execution time jitter change with priority and niceness? Report your choice of command if you were to execute a task with high priority. (You will need to use this command again in the following sections)
 
 ## Running a computer vision task on Raspberry Pi (Python)
- 
-If you prefer to use C++, refer to [this](cpp_instructions.md) document. (TODO: implement template matching in C++)
+
+If you prefer to use C++, refer to [this](cpp_instructions.md) document.
 
 Install OpenCV library:
 
@@ -211,7 +211,7 @@ Now that we understand how YOLO works, let's evaluate the WCET. Complete the fol
 > 2. Try to extract the numbers of each block detected, does the variation in interested types (classes) numbers affect the overall processing time? Compare this to the methodology of template matching.
 > 3. Insert more timers inside the source code to identify the source of jitter during each step YOLO inference.
 > 4. Try running the same task using a smaller model (network/yolov5n_mario.onnx), observe and report the differences.
-> 5. Modify the code and run another video with time-varying scene complexity through the detection pipeline, remember to change the pre-trained network to standard YOLO `network/yolov5s.onnx`. An example is provided [here](data/party.mp4). Examine how the processing time of each frame changes over time. What is the overall distribution of these processing times? Plot and report the execution time histogram, compare it with task 1. 
+> 5. Modify the code and run another video with time-varying scene complexity through the detection pipeline, remember to change the pre-trained network to standard YOLO `network/yolov5s.onnx`. An example is provided [here](data/party.mp4). Examine how the processing time of each frame changes over time. What is the overall distribution of these processing times? Plot and report the execution time histogram, compare it with task 1.
 > 6. Based on your experiment thus far, summarize the difference in WCET between template matching and YOLO, what are the advantages and disadvantages of each method?
 
 ## Other RTOS analysis on Raspberry Pi
